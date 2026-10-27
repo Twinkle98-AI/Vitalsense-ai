@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found | VitalSense AI{% endblock %}
+
+{% block content %}
+<div class="error-page-container">
+    <div class="error-card card text-center">
+        <div class="error-badge bg-blue-subtle text-blue">
+            <i data-lucide="help-circle" class="icon-large"></i>
+        </div>
+        <h1 class="error-code">404</h1>
+        <h2 class="error-heading">Patient Record or Page Not Found</h2>
+        <p class="error-message">
+            The requested page or patient record could not be found in the VitalSense AI system. It may have been removed or the ID was entered incorrectly.
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                <i data-lucide="home" class="icon-small"></i>
+                <span>Return to Dashboard</span>
+            </a>
+            <a href="{{ url_for('add_patient') }}" class="btn btn-secondary">
+                <i data-lucide="user-plus" class="icon-small"></i>
+                <span>Register Patient</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

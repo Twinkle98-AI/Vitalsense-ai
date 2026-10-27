@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Patient #{{ patient.id }} | VitalSense AI{% endblock %}
+
+{% block content %}
+<div class="form-page-layout">
+
+    <div class="page-header-row">
+        <div>
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <span class="breadcrumb-separator">/</span>
+                <a href="{{ url_for('patient_detail', patient_id=patient.id) }}">Patient #{{ patient.id }}</a>
+                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-current">Edit</span>
+            </nav>
+            <h1 class="page-title">Edit Patient Record #{{ patient.id }}</h1>
+            <p class="page-subtitle">Update demographics or laboratory parameters for {{ patient.full_name }}</p>
+        </div>
+        <div>
+            <a href="{{ url_for('patient_detail', patient_id=patient.id) }}" class="btn btn-secondary">
+                <i data-lucide="arrow-left" class="icon-small"></i>
+                <span>Cancel & Return</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="form-grid">
+        <!-- Main Form Column -->
+        <div class="form-main-col">
+            <div class="card form-card">
+                <form action="{{ url_for('edit_patient', patient_id=patient.id) }}" method="POST" id="editPatientForm" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <!-- Notice banner about AI regeneration -->
+                    <div class="alert alert-info mb-4" role="status">
+                        <i data-lucide="info" class="alert-icon"></i>
+                        <div class="alert-text">
+                            <strong>Note on AI Observations:</strong> If laboratory values (Glucose, Haemoglobin, Cholesterol) are modified, fresh AI remarks will be requested from NVIDIA NIM. If only demographics (Name, Date of Birth, Email) are updated, existing AI remarks are safely preserved.
+                        </div>
+                    </div>
+
+                    <!-- Section: Patient Demographics -->
+                    <fieldset class="form-section">
+                        <legend class="form-section-title">
+                            <i data-lucide="user" class="icon-small text-teal"></i>
+                            <span>Patient Demographics</span>
+                        </legend>
+
+                        <!-- Full Name -->
+                        <div class="form-group {% if errors.get('full_name') %}has-error{% endif %}">
+                            <label for="full_name" class="form-label required">Full Name</label>
+                            <input 
+                                type="text" 
+                                id="full_name" 
+                                name="full_name" 
+                                class="form-control" 
+                                value="{{ form_data.get('full_name', '') }}"
+                                required 
+                                maxlength="100"
+                                autocomplete="off"
+                            >
+                            {% if errors.get('full_name') %}
+                                <div class="field-error-message" role="alert">
+                                    <i data-lucide="alert-circle" class="icon-tiny"></i>
+                                    <span>{{ errors.get('full_name') }}</span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-row-2">
+                            <!-- Date of Birth -->
+                            <div class="form-group {% if errors.get('dob') %}has-error{% endif %}">
+                                <label for="dob" class="form-label required">Date of Birth (DD/MM/YYYY)</label>
+                                <input 
+                                    type="text" 
+                                    id="dob" 
+                                    name="dob" 
+                                    class="form-control font-mono" 
+                                    placeholder="DD/MM/YYYY" 
+                                    value="{{ form_data.get('dob', '') }}"
+                                    required 
+                                    maxlength="10"
+                                    autocomplete="off"
+                                >
+                                <small class="form-hint">Strict DD/MM/YYYY format (e.g. 15/08/2000).</small>
+                                {% if errors.get('dob') %}
+                                    <div class="field-error-message" role="alert">
+                                        <i data-lucide="alert-circle" class="icon-tiny"></i>
+                                        <span>{{ errors.get('dob') }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Email Address -->
+                            <div class="form-group {% if errors.get('email') %}has-error{% endif %}">
+                                <label for="email" class="form-label required">Email Address</label>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="email" 
+                                    class="form-control" 
+                                    value="{{ form_data.get('email', '') }}"
+                                    required 
+                                    maxlength="254"
+                                    autocomplete="off"
+                                >
+                                <small class="form-hint">Example: gokul@infocare.com</small>
+                                {% if errors.get('email') %}
+                                    <div class="field-error-message" role="alert">
+                                        <i data-lucide="alert-circle" class="icon-tiny"></i>
+                                        <span>{{ errors.get('email') }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section: Laboratory Measurements -->
+                    <fieldset class="form-section">
+                        <legend class="form-section-title">
+                            <i data-lucide="flask-conical" class="icon-small text-teal"></i>
+                            <span>Laboratory Measurements</span>
+                        </legend>
+
+                        <div class="form-row-3">
+                            <!-- Glucose -->
+                            <div class="form-group {% if errors.get('glucose') %}has-error{% endif %}">
+                                <label for="glucose" class="form-label required">
+                                    Glucose <span class="unit-badge">({{ LAB_UNITS.glucose }})</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    id="glucose" 
+                                    name="glucose" 
+                                    class="form-control" 
+                                    value="{{ form_data.get('glucose', '') }}"
+                                    required
+                                >
+                                <small class="form-hint">Valid: {{ LAB_LIMITS.glucose.min }} - {{ LAB_LIMITS.glucose.max }}</small>
+                                {% if errors.get('glucose') %}
+                                    <div class="field-error-message" role="alert">
+                                        <i data-lucide="alert-circle" class="icon-tiny"></i>
+                                        <span>{{ errors.get('glucose') }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Haemoglobin -->
+                            <div class="form-group {% if errors.get('haemoglobin') %}has-error{% endif %}">
+                                <label for="haemoglobin" class="form-label required">
+                                    Haemoglobin <span class="unit-badge">({{ LAB_UNITS.haemoglobin }})</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    id="haemoglobin" 
+                                    name="haemoglobin" 
+                                    class="form-control" 
+                                    value="{{ form_data.get('haemoglobin', '') }}"
+                                    required
+                                >
+                                <small class="form-hint">Valid: {{ LAB_LIMITS.haemoglobin.min }} - {{ LAB_LIMITS.haemoglobin.max }}</small>
+                                {% if errors.get('haemoglobin') %}
+                                    <div class="field-error-message" role="alert">
+                                        <i data-lucide="alert-circle" class="icon-tiny"></i>
+                                        <span>{{ errors.get('haemoglobin') }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Cholesterol -->
+                            <div class="form-group {% if errors.get('cholesterol') %}has-error{% endif %}">
+                                <label for="cholesterol" class="form-label required">
+                                    Cholesterol <span class="unit-badge">({{ LAB_UNITS.cholesterol }})</span>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    step="0.1" 
+                                    id="cholesterol" 
+                                    name="cholesterol" 
+                                    class="form-control" 
+                                    value="{{ form_data.get('cholesterol', '') }}"
+                                    required
+                                >
+                                <small class="form-hint">Valid: {{ LAB_LIMITS.cholesterol.min }} - {{ LAB_LIMITS.cholesterol.max }}</small>
+                                {% if errors.get('cholesterol') %}
+                                    <div class="field-error-message" role="alert">
+                                        <i data-lucide="alert-circle" class="icon-tiny"></i>
+                                        <span>{{ errors.get('cholesterol') }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Form Actions -->
+                    <div class="form-actions-bar">
+                        <a href="{{ url_for('patient_detail', patient_id=patient.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary btn-submit-with-loader" id="btnSavePatient">
+                            <span class="btn-spinner" aria-hidden="true"></span>
+                            <i data-lucide="save" class="icon-small btn-icon-normal"></i>
+                            <span class="btn-text">Save Changes</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar Current Remarks Column -->
+        <aside class="form-sidebar-col">
+            <div class="card info-card">
+                <div class="info-card-header">
+                    <i data-lucide="file-text" class="icon-medium text-teal"></i>
+                    <h3 class="info-card-title">Stored AI Remarks</h3>
+                </div>
+                <div class="info-card-body">
+                    <p class="text-muted text-sm mb-2">Currently stored remarks for this record:</p>
+                    <div class="remarks-box-preview">
+                        {{ patient.remarks }}
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+</div>
+{% endblock %}

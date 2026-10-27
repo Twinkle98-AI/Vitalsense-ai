@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VitalSense AI - AI-Powered Patient Health Insights and Management System. Manage patient records and generate informational AI health observations.">
+    <title>{% block title %}VitalSense AI | Patient Health Insights & Management{% endblock %}</title>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Academic & Clinical Disclaimer Bar -->
+    <aside class="disclaimer-banner" role="complementary" aria-label="Academic & Medical Disclaimer">
+        <div class="container disclaimer-content">
+            <i data-lucide="info" class="icon-small" aria-hidden="true"></i>
+            <span><strong>Academic Demonstration Notice:</strong> VitalSense AI provides general educational observations based on lab values. It is not a diagnostic device and does not substitute for licensed medical advice.</span>
+        </div>
+    </aside>
+
+    <!-- Application Header / Navigation -->
+    <header class="app-header">
+        <div class="container header-container">
+            <div class="brand-group">
+                <a href="{{ url_for('dashboard') }}" class="brand-link" id="brand-link">
+                    <div class="brand-logo-icon">
+                        <i data-lucide="activity" class="brand-icon"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-title">{{ APP_NAME }}</span>
+                        <span class="brand-subtitle">Patient Health Records & AI-Assisted Insights</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="nav-links" id="main-nav" aria-label="Main Navigation">
+                <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}" id="nav-dashboard">
+                    <i data-lucide="layout-dashboard" class="icon-nav"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('dashboard') }}#patient-records" class="nav-item" id="nav-records">
+                    <i data-lucide="clipboard-list" class="icon-nav"></i>
+                    <span>Patient Records</span>
+                </a>
+                <a href="{{ url_for('add_patient') }}" class="btn btn-primary btn-add-header" id="nav-btn-add">
+                    <i data-lucide="user-plus" class="icon-small"></i>
+                    <span>+ Add Patient</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Flash Messages Container -->
+    <div class="container notifications-container" id="notifications-area">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible" role="alert" id="alert-msg-{{ loop.index }}">
+                        <div class="alert-content">
+                            {% if category == 'success' %}
+                                <i data-lucide="check-circle-2" class="alert-icon"></i>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <i data-lucide="alert-octagon" class="alert-icon"></i>
+                            {% elif category == 'warning' %}
+                                <i data-lucide="alert-triangle" class="alert-icon"></i>
+                            {% else %}
+                                <i data-lucide="info" class="alert-icon"></i>
+                            {% endif %}
+                            <div class="alert-text">{{ message }}</div>
+                        </div>
+                        <button type="button" class="btn-close" aria-label="Close" onclick="this.parentElement.remove()">
+                            <i data-lucide="x" class="icon-close"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Application Footer -->
+    <footer class="app-footer">
+        <div class="container footer-container">
+            <div class="footer-left">
+                <div class="footer-brand">
+                    <i data-lucide="heart-pulse" class="icon-small text-teal"></i>
+                    <strong>{{ APP_NAME }}</strong> &mdash; <span>{{ APP_TAGLINE }}</span>
+                </div>
+                <p class="footer-meta">
+                    Built with Python Flask, SQLite, Jinja2, and NVIDIA NIM hosted inference API.
+                </p>
+            </div>
+            <div class="footer-right">
+                <span class="badge-status">
+                    <span class="status-dot"></span> NVIDIA NIM Connected
+                </span>
+                <span class="footer-copyright">&copy; 2026 VitalSense AI Project. Academic Software.</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-backdrop" id="deleteModal" aria-hidden="true" role="dialog" aria-labelledby="deleteModalTitle">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-icon-warning">
+                    <i data-lucide="alert-triangle"></i>
+                </div>
+                <div>
+                    <h3 class="modal-title" id="deleteModalTitle">Confirm Record Deletion</h3>
+                    <p class="modal-subtitle">This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete the patient record for <strong id="deletePatientName">this patient</strong> (ID: <span id="deletePatientId">#</span>)?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="btnCancelDelete">Cancel</button>
+                <form id="deleteForm" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger" id="btnConfirmDelete">
+                        <i data-lucide="trash-2" class="icon-small"></i> Delete Record
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Initialize Lucide Icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

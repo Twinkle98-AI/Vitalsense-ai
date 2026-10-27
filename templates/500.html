@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Internal Server Error | VitalSense AI{% endblock %}
+
+{% block content %}
+<div class="error-page-container">
+    <div class="error-card card text-center">
+        <div class="error-badge bg-rose-subtle text-rose">
+            <i data-lucide="alert-octagon" class="icon-large"></i>
+        </div>
+        <h1 class="error-code">500</h1>
+        <h2 class="error-heading">Internal Application Error</h2>
+        <p class="error-message">
+            An unexpected error occurred while processing your request. VitalSense AI has logged the event safely without exposing sensitive configuration details.
+        </p>
+        <div class="error-actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                <i data-lucide="home" class="icon-small"></i>
+                <span>Return to Dashboard</span>
+            </a>
+            <button type="button" class="btn btn-secondary" onclick="window.location.reload()">
+                <i data-lucide="refresh-cw" class="icon-small"></i>
+                <span>Try Again</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

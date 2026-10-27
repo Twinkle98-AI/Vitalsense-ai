@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | VitalSense AI - Patient Health Insights{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+
+    <!-- Page Header & Welcome Banner -->
+    <section class="page-header-row" aria-labelledby="dashboard-title">
+        <div>
+            <h1 class="page-title" id="dashboard-title">Clinical Dashboard</h1>
+            <p class="page-subtitle">Real-time overview of patient records and AI-assisted laboratory observations</p>
+        </div>
+        <div class="header-action-group">
+            <a href="{{ url_for('add_patient') }}" class="btn btn-primary" id="btn-add-patient-main">
+                <i data-lucide="plus-circle" class="icon-small"></i>
+                <span>Add New Patient</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Summary Metrics Cards Grid -->
+    <section class="stats-grid" aria-label="Database Summary Metrics">
+        <!-- Card 1: Total Patients -->
+        <article class="stat-card" id="card-total-patients">
+            <div class="stat-card-header">
+                <span class="stat-label">Total Patient Records</span>
+                <div class="stat-icon-wrapper bg-blue-subtle text-blue">
+                    <i data-lucide="users" class="icon-medium"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                <div class="stat-value" id="val-total-patients">{{ stats.total_patients }}</div>
+                <div class="stat-meta">
+                    {% if stats.total_patients == 1 %}
+                        <span>1 registered patient</span>
+                    {% elif stats.total_patients > 1 %}
+                        <span>{{ stats.total_patients }} registered patients</span>
+                    {% else %}
+                        <span class="text-muted">Awaiting initial entries</span>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+
+        <!-- Card 2: Average Glucose -->
+        <article class="stat-card" id="card-avg-glucose">
+            <div class="stat-card-header">
+                <span class="stat-label">Average Glucose</span>
+                <div class="stat-icon-wrapper bg-teal-subtle text-teal">
+                    <i data-lucide="droplet" class="icon-medium"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                {% if stats.avg_glucose is not none %}
+                    <div class="stat-value" id="val-avg-glucose">
+                        {{ stats.avg_glucose }} <span class="stat-unit">{{ LAB_UNITS.glucose }}</span>
+                    </div>
+                    <div class="stat-meta text-muted">Laboratory mean across cohort</div>
+                {% else %}
+                    <div class="stat-value-empty">&mdash;</div>
+                    <div class="stat-meta text-muted">No patient measurements</div>
+                {% endif %}
+            </div>
+        </article>
+
+        <!-- Card 3: Average Haemoglobin -->
+        <article class="stat-card" id="card-avg-haemoglobin">
+            <div class="stat-card-header">
+                <span class="stat-label">Average Haemoglobin</span>
+                <div class="stat-icon-wrapper bg-purple-subtle text-purple">
+                    <i data-lucide="activity-square" class="icon-medium"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                {% if stats.avg_haemoglobin is not none %}
+                    <div class="stat-value" id="val-avg-haemoglobin">
+                        {{ stats.avg_haemoglobin }} <span class="stat-unit">{{ LAB_UNITS.haemoglobin }}</span>
+                    </div>
+                    <div class="stat-meta text-muted">Laboratory mean across cohort</div>
+                {% else %}
+                    <div class="stat-value-empty">&mdash;</div>
+                    <div class="stat-meta text-muted">No patient measurements</div>
+                {% endif %}
+            </div>
+        </article>
+
+        <!-- Card 4: Average Cholesterol -->
+        <article class="stat-card" id="card-avg-cholesterol">
+            <div class="stat-card-header">
+                <span class="stat-label">Average Cholesterol</span>
+                <div class="stat-icon-wrapper bg-amber-subtle text-amber">
+                    <i data-lucide="heart" class="icon-medium"></i>
+                </div>
+            </div>
+            <div class="stat-card-body">
+                {% if stats.avg_cholesterol is not none %}
+                    <div class="stat-value" id="val-avg-cholesterol">
+                        {{ stats.avg_cholesterol }} <span class="stat-unit">{{ LAB_UNITS.cholesterol }}</span>
+                    </div>
+                    <div class="stat-meta text-muted">Laboratory mean across cohort</div>
+                {% else %}
+                    <div class="stat-value-empty">&mdash;</div>
+                    <div class="stat-meta text-muted">No patient measurements</div>
+                {% endif %}
+            </div>
+        </article>
+    </section>
+
+    <!-- Patient Records Table Section -->
+    <section class="card table-card" id="patient-records" aria-labelledby="records-section-title">
+        <div class="table-header-toolbar">
+            <div class="toolbar-title-group">
+                <h2 class="card-title" id="records-section-title">
+                    <i data-lucide="folder-heart" class="icon-small text-teal"></i>
+                    <span>Patient Health Records</span>
+                </h2>
+                <span class="badge-count" id="patient-count-badge">{{ patients|length }} record{% if patients|length != 1 %}s{% endif %}</span>
+            </div>
+
+            <!-- Search Form -->
+            <form action="{{ url_for('dashboard') }}" method="GET" class="search-form" id="patientSearchForm" role="search">
+                <div class="search-input-wrapper">
+                    <i data-lucide="search" class="search-icon" aria-hidden="true"></i>
+                    <input 
+                        type="text" 
+                        name="q" 
+                        id="patientSearchInput" 
+                        class="search-input" 
+                        placeholder="Search by patient name or email..." 
+                        value="{{ search_query }}"
+                        autocomplete="off"
+                        aria-label="Search patient records"
+                    >
+                    {% if search_query %}
+                        <a href="{{ url_for('dashboard') }}" class="search-clear-btn" title="Clear search" aria-label="Clear search query">
+                            <i data-lucide="x" class="icon-tiny"></i>
+                        </a>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-secondary btn-search" id="btn-submit-search">
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <!-- Table or Empty State -->
+        {% if patients and patients|length > 0 %}
+            <div class="table-responsive">
+                <table class="data-table" id="patientsTable" aria-label="Patient Records">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="th-id">ID</th>
+                            <th scope="col" class="th-name">Full Name</th>
+                            <th scope="col" class="th-dob">Date of Birth</th>
+                            <th scope="col" class="th-email">Email</th>
+                            <th scope="col" class="th-num">Glucose<br><small class="text-muted">({{ LAB_UNITS.glucose }})</small></th>
+                            <th scope="col" class="th-num">Haemoglobin<br><small class="text-muted">({{ LAB_UNITS.haemoglobin }})</small></th>
+                            <th scope="col" class="th-num">Cholesterol<br><small class="text-muted">({{ LAB_UNITS.cholesterol }})</small></th>
+                            <th scope="col" class="th-remarks">AI Remarks</th>
+                            <th scope="col" class="th-actions text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in patients %}
+                            <tr class="table-row" id="patient-row-{{ p.id }}">
+                                <td class="td-id">
+                                    <span class="badge-id">#{{ p.id }}</span>
+                                </td>
+                                <td class="td-name">
+                                    <div class="patient-name-cell">
+                                        <div class="avatar-circle">{{ p.full_name[:1] | upper }}</div>
+                                        <div class="name-text-group">
+                                            <a href="{{ url_for('patient_detail', patient_id=p.id) }}" class="patient-name-link">
+                                                <strong>{{ p.full_name }}</strong>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="td-dob font-mono">{{ p.dob | format_dob }}</td>
+                                <td class="td-email">
+                                    <span class="email-text" title="{{ p.email }}">{{ p.email }}</span>
+                                </td>
+                                <td class="td-num">
+                                    <span class="lab-pill">{{ p.glucose }}</span>
+                                </td>
+                                <td class="td-num">
+                                    <span class="lab-pill">{{ p.haemoglobin }}</span>
+                                </td>
+                                <td class="td-num">
+                                    <span class="lab-pill">{{ p.cholesterol }}</span>
+                                </td>
+                                <td class="td-remarks">
+                                    <div class="remarks-preview" title="{{ p.remarks }}">
+                                        <i data-lucide="sparkles" class="icon-tiny text-teal" aria-hidden="true"></i>
+                                        <span>{{ p.remarks | truncate(95, true, '...') }}</span>
+                                    </div>
+                                </td>
+                                <td class="td-actions text-right">
+                                    <div class="actions-group">
+                                        <a href="{{ url_for('patient_detail', patient_id=p.id) }}" class="btn-action btn-action-view" title="View Patient Details" id="action-view-{{ p.id }}">
+                                            <i data-lucide="eye" class="icon-small"></i>
+                                            <span>View</span>
+                                        </a>
+                                        <a href="{{ url_for('edit_patient', patient_id=p.id) }}" class="btn-action btn-action-edit" title="Edit Patient Details" id="action-edit-{{ p.id }}">
+                                            <i data-lucide="edit-3" class="icon-small"></i>
+                                            <span>Edit</span>
+                                        </a>
+                                        <button 
+                                            type="button" 
+                                            class="btn-action btn-action-delete" 
+                                            title="Delete Patient Record"
+                                            id="action-delete-{{ p.id }}"
+                                            data-patient-id="{{ p.id }}"
+                                            data-patient-name="{{ p.full_name }}"
+                                            onclick="openDeleteModal('{{ p.id }}', '{{ p.full_name | escape }}')"
+                                        >
+                                            <i data-lucide="trash-2" class="icon-small"></i>
+                                            <span>Delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state" id="empty-state-card">
+                {% if search_query %}
+                    <div class="empty-icon bg-amber-subtle text-amber">
+                        <i data-lucide="search-x" class="icon-large"></i>
+                    </div>
+                    <h3 class="empty-title">No matching records found</h3>
+                    <p class="empty-description">
+                        No patient records match the search term "<strong>{{ search_query }}</strong>".
+                    </p>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <i data-lucide="arrow-left" class="icon-small"></i>
+                        <span>Reset Search</span>
+                    </a>
+                {% else %}
+                    <div class="empty-icon bg-teal-subtle text-teal">
+                        <i data-lucide="clipboard-plus" class="icon-large"></i>
+                    </div>
+                    <h3 class="empty-title">No patient records registered</h3>
+                    <p class="empty-description">
+                        The VitalSense AI database is currently empty. Start by adding a patient record to calculate live statistics and generate NVIDIA AI health observations.
+                    </p>
+                    <a href="{{ url_for('add_patient') }}" class="btn btn-primary">
+                        <i data-lucide="plus-circle" class="icon-small"></i>
+                        <span>Add Your First Patient</span>
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+
+</div>
+{% endblock %}
